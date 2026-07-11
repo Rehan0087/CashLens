@@ -298,3 +298,30 @@ Verification:
 - npm.cmd run verify:lifecycle
 - git diff --check
 ```
+
+## Runtime and navigation cleanup prompt
+
+```text
+Complete the CashLens repository for the final demo handoff.
+
+Required changes:
+- Make run-project.bat enforce Node.js 24+, use lockfile-based npm ci when
+  available, wait for the API health endpoint, and wait for the Vite client
+  before opening the browser.
+- Remove the visible Live transaction feed buttons from the authenticated
+  header and landing page while preserving unrelated application behavior.
+- Keep all synthetic-data, provider-boundary, human-review, and no-automatic-
+  financial-action safeguards intact.
+
+Verification:
+- Run the batch startup smoke test.
+- npm.cmd run build (client)
+- git diff --check
+```
+
+## Runtime and navigation cleanup implementation record
+
+- `run-project.bat` now checks Node.js 24+, installs reproducibly with lockfiles,
+  waits for `/api/health`, waits for Vite, and reports startup failures.
+- The live transaction feed buttons were removed from the authenticated header
+  and landing page; the underlying implementation remains untouched.

@@ -54,9 +54,6 @@ export default function App() {
                 <span aria-hidden="true">🎬</span> {t("guidedScenarios")}
               </button>
             )}
-            <button className={`btn app-nav-btn${liveOpen ? " active" : ""}`} onClick={() => { setLiveOpen(true); setScenariosOpen(false); }}>
-              <span aria-hidden="true">◉</span> {t("liveFeedNav")}
-            </button>
             <ThemeToggle />
             <div className="lang-toggle" role="group" aria-label="Language">
               {(["en", "bn", "banglish"] as const).map((id) => (
