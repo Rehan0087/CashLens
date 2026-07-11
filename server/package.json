@@ -12,7 +12,11 @@
     "build": "tsc -p tsconfig.json && node scripts/copy-schema.mjs",
     "start": "node dist/index.js",
     "seed": "tsx src/db/seed.ts",
-    "metrics": "tsx src/engine/metrics.ts"
+    "metrics": "tsx src/engine/metrics.ts",
+    "verify:separation": "tsx scripts/verify_provider_separation.ts",
+    "verify:evidence": "tsx scripts/verify_liquidity_anomaly_evidence.ts",
+    "verify:risk-language": "tsx scripts/verify_risk_language.ts",
+    "verify:lifecycle": "tsx scripts/verify_alert_lifecycle.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

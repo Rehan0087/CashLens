@@ -28,9 +28,9 @@ const txTypeWords = {
 };
 
 const reviewFirstAction: LocalizedText = {
-  en: "Review with the agent before escalating. This is a statistical signal — not a fraud decision.",
-  bn: "এসকেলেট করার আগে এজেন্টের সাথে কথা বলে যাচাই করুন। এটি একটি পরিসংখ্যানগত সংকেত — কোনো জালিয়াতির সিদ্ধান্ত নয়।",
-  banglish: "Escalate korar age agenter shathe kotha bole jachai korun. Eta ekta statistical signal — kono jaliyatir siddhanto noy.",
+  en: "Review with the agent before escalating. This is a statistical signal — not proof of wrongdoing or a final fraud decision.",
+  bn: "এস্কেলেট করার আগে এজেন্টের সাথে কথা বলে যাচাই করুন। এটি একটি পরিসংখ্যানগত সংকেত — কোনো অন্যায়ের প্রমাণ বা চূড়ান্ত জালিয়াতির সিদ্ধান্ত নয়।",
+  banglish: "Escalate korar age agenter shathe kotha bole review korun. Eta statistical signal — kono onyay-er proman ba final fraud-er siddhanto noy.",
 };
 
 export function physicalCashPressureEvidence(p: {
@@ -57,9 +57,9 @@ export function physicalCashPressureEvidence(p: {
       banglish: `Agami 4 ghontay anumanik cash-out chahida ${taka(p.projectedOutflow)}, ja hate thaka nogoder (${taka(p.physicalCash)}) cheye beshi. Ei hare shared cash prai ${formatMinutes(p.estimatedShortageMinutes)}-e shesh hote pare.`,
     },
     suggestedAction: {
-      en: "Arrange a cash top-up before the afternoon peak, or coordinate support with a nearby agent.",
-      bn: "বিকেলের চাপের আগে নগদ টাকার ব্যবস্থা করুন, অথবা কাছাকাছি কোনো এজেন্টের সহায়তা নিন।",
-      banglish: "Bikeler chaper age nogod takar bebostha korun, othoba kachakachi kono agenter shohayota nin.",
+      en: "Review this forecast with provider operations and coordinate any approved support through official channels. This system does not move cash or execute a top-up.",
+      bn: "এই পূর্বাভাস প্রোভাইডার অপারেশনসের সাথে পর্যালোচনা করুন এবং অফিসিয়াল চ্যানেলে অনুমোদিত সহায়তা সমন্বয় করুন। এই সিস্টেম নগদ সরায় বা টপ-আপ চালু করে না।",
+      banglish: "Ei forecast provider operations-er shathe review korun ebong official channele approved support coordinate korun. Ei system cash move ba top-up execute kore na.",
     },
   };
 }
@@ -89,9 +89,9 @@ export function eMoneyPressureEvidence(p: {
       banglish: `${P}-e agami 4 ghontay anumanik cash-in chahida ${taka(p.projectedInflowNeed)}, ja bortoman floater (${taka(p.balance)}) cheye beshi. Ei hare ${P} prai ${formatMinutes(p.estimatedShortageMinutes)}-e shesh hote pare.`,
     },
     suggestedAction: {
-      en: `Request an e-float top-up from the ${P} distributor before the queue builds.`,
-      bn: `ভিড় বাড়ার আগে ${P} ডিস্ট্রিবিউটরের কাছ থেকে ই-ফ্লোট টপ-আপের অনুরোধ করুন।`,
-      banglish: `Bhir barar age ${P} distributor er kach theke e-float top-up er onurodh korun.`,
+      en: `Review this forecast with ${P} operations and request any approved e-float support through the official ${P} channel. This system does not initiate a top-up.`,
+      bn: `${P} অপারেশনসের সাথে এই পূর্বাভাস পর্যালোচনা করুন এবং অফিসিয়াল ${P} চ্যানেলে অনুমোদিত ই-ফ্লোট সহায়তার অনুরোধ করুন। এই সিস্টেম টপ-আপ চালু করে না।`,
+      banglish: `${P} operations-er shathe ei forecast review korun ebong official ${P} channele approved e-float support-er onurodh korun. Ei system top-up initiate kore na.`,
     },
   };
 }
@@ -117,14 +117,14 @@ export function imbalanceEvidence(p: {
     },
     unconfirmed: p.unconfirmed,
     explanation: {
-      en: `${HP} float is ${taka(p.surplusBalance)} while ${LP} float is only ${taka(p.deficitBalance)} — ${LP} customers may be turned away while value sits idle in ${HP}.`,
-      bn: `${HP} ফ্লোট ${taka(p.surplusBalance)}, কিন্তু ${LP} ফ্লোট মাত্র ${taka(p.deficitBalance)} — ${HP}-এ টাকা বসে থাকলেও ${LP} গ্রাহক ফেরত যেতে পারেন।`,
-      banglish: `${HP} float ${taka(p.surplusBalance)}, kintu ${LP} float matro ${taka(p.deficitBalance)} — ${HP}-e taka boshe thakleo ${LP} grahok ferot jete paren.`,
+      en: `${HP} float is ${taka(p.surplusBalance)} while ${LP} float is only ${taka(p.deficitBalance)}. This provider imbalance may affect service availability and requires operational review.`,
+      bn: `${HP} ফ্লোট ${taka(p.surplusBalance)}, কিন্তু ${LP} ফ্লোট মাত্র ${taka(p.deficitBalance)}। এই প্রোভাইডার ভারসাম্যহীনতা সেবা প্রাপ্যতায় প্রভাব ফেলতে পারে এবং অপারেশনাল পর্যালোচনা প্রয়োজন।`,
+      banglish: `${HP} float ${taka(p.surplusBalance)}, kintu ${LP} float matro ${taka(p.deficitBalance)}. Ei provider imbalance service availability-te probhab felte pare ebong operational review dorkar.`,
     },
     suggestedAction: {
-      en: `Coordinate a ${LP} float top-up through official channels. Wallets stay separate — no cross-wallet transfer is possible or attempted.`,
-      bn: `অফিসিয়াল চ্যানেলে ${LP} ফ্লোট টপ-আপের ব্যবস্থা করুন। ওয়ালেট আলাদাই থাকবে — এক ওয়ালেট থেকে অন্যটিতে টাকা সরানো হয় না।`,
-      banglish: `Official channele ${LP} float top-up er bebostha korun. Wallet alada-i thakbe — ek wallet theke onnotite taka sorano hoy na.`,
+      en: `Review the imbalance with ${LP} operations and coordinate any approved support through official channels. Wallets stay separate; this system cannot transfer value between them.`,
+      bn: `${LP} অপারেশনসের সাথে এই ভারসাম্যহীনতা পর্যালোচনা করুন এবং অফিসিয়াল চ্যানেলে অনুমোদিত সহায়তা সমন্বয় করুন। ওয়ালেট আলাদা থাকবে; এই সিস্টেম এক ওয়ালেট থেকে অন্যটিতে অর্থ স্থানান্তর করতে পারে না।`,
+      banglish: `${LP} operations-er shathe ei imbalance review korun ebong official channele approved support coordinate korun. Wallet alada thakbe; ei system ek wallet theke onnotite taka transfer korte pare na.`,
     },
   };
 }

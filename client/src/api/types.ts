@@ -119,6 +119,16 @@ export interface CaseDetail extends AlertListItem {
   workflowEvents: WorkflowEvent[];
   agentContext: AgentLiquidity | null;
   allowedActions: CaseAction[];
+  coordination: CoordinationGuardrail;
+}
+
+export interface CoordinationGuardrail {
+  mode: "human_review_only";
+  recommendationOnly: true;
+  executedOperation: null;
+  financialMovement: "none";
+  providerBoundaryEnforced: true;
+  note: string;
 }
 
 export interface AlertFeedback {

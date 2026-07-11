@@ -196,14 +196,49 @@ so they stay correct across reseeds. Full mapping in
 See [docs/architecture-diagram.md](docs/architecture-diagram.md) for the full diagram.
 
 ```
-client/  React + Vite + TS    role views, drawer bar, case panels, i18n toggle
+client/  React + Vite + TypeScript
+  src/pages/                  role dashboards and landing/sign-in flow
+  src/components/             drawer bar, planning panel, case panel, inclusive alerts
+  src/api/                    typed client contracts and session-based API calls
 server/  Express + node:sqlite
-  src/simulation/             seeded synthetic data generator + labeled anomaly injector
-  src/engine/                 liquidity scorer, detectors, workflow rules, metrics
-  src/routes/                 role-scoped REST API (masking enforced server-side)
-  src/i18n/                   trilingual alert explanations (EN / BN / Banglish)
-docs/                         simulation note, responsible-design note, validation evidence
+  src/db/                     normalized relational schema, migration, and seed
+  src/simulation/             deterministic synthetic data and held-out validation data
+  src/engine/                 liquidity forecasts, detectors, planning, workflow, metrics
+  src/routes/                 authenticated REST API with server-side masking
+  src/i18n/                   trilingual evidence and careful risk language
+  scripts/                    Linux/Python generators and submission verifiers
+docs/                         architecture, assumptions, safety, metrics, and checklist evidence
 ```
+
+### Runtime data flow
+
+```text
+seeded providers + agents + balances + transactions
+                         |
+                         v
+              normalized SQLite relational store
+                         |
+          +--------------+---------------+
+          v                              v
+  EWRH liquidity scorer              anomaly detectors
+  shared cash + separate floats      z-score / odd-hour / data quality
+          |                              |
+          +--------------+---------------+
+                         v
+       evidence + confidence + advisory alert drafts
+                         |
+                         v
+   authenticated API -> role/provider masking -> React views
+                         |
+                         v
+         human acknowledge / escalate / resolve / feedback
+```
+
+The system keeps `agents.physical_cash` separate from
+`agent_provider_balances.e_money_balance`. Provider balances are keyed by the
+composite `(agent_id, provider_id)` relationship, and transaction rows retain
+their provider context. The read-only proof is available through
+`npm run verify:separation`.
 
 ## What the engine detects
 
@@ -236,9 +271,82 @@ from stale feeds are labeled *unconfirmed* instead of being silently trusted or 
 
 Generated ground truth (labeled injected anomalies + engineered agent scenarios) lets
 the engine be scored honestly — see [docs/validation-evidence.md](docs/validation-evidence.md).
-Headline numbers on the fixed seed: **75% recall** (the misses are deliberately subtle
-2.2σ anomalies — catching them costs 29 false positives, shown in the threshold sweep),
-**0.0% FPR**, **100% precision**, **100% scenario coverage**, **~8ms** full detection pass.
+Headline numbers on the fixed seed: **80.0% recall** (two misses are deliberately subtle
+anomalies), **0.0% FPR**, **100.0% precision**, **87.5% scenario coverage**, and
+**13.3 ms** average full detection pass. Held-out capacity classification is **100.0%**
+with an average simulated warning lead of **186 minutes**. These are synthetic-fixture
+measurements, not production accuracy claims.
+
+Reproduce the complete submission evidence from `server/`:
+
+```bash
+npm run seed
+npm run metrics
+npm run verify:separation
+npm run verify:evidence
+npm run verify:risk-language
+npm run verify:lifecycle
+```
+
+## Safety, privacy, boundaries, and limitations
+
+### Safety and human authority
+
+CashLens is advisory decision support. It does not execute payments, top-ups,
+wallet transfers, cash transfers, account blocks, fund freezes, suspensions, or
+final fraud determinations. A detector output is a statistical signal. Provider
+operations and risk analysts must review context and write notes before
+escalation or resolution.
+
+The API enforces authority independently of the UI:
+
+- provider operations may acknowledge and escalate; they cannot resolve an
+  unusual-transaction case;
+- risk analysts may resolve escalated cases and record feedback;
+- agents, FSP users, and management cannot mutate cases;
+- invalid actions and missing notes fail without database mutation.
+
+### Privacy and provider boundaries
+
+- All data is synthetic; no real customer identity, account number, PIN, OTP,
+  private key, credential, or provider API is used.
+- Demo passwords are synthetic salted hashes and must never be reused in
+  production.
+- Provider scope comes from an authenticated HttpOnly session, not a trusted URL
+  parameter.
+- Provider operations sees its own exact provider context and only pressure
+  direction for other providers.
+- Management sees counts and aggregates, not balances or case evidence.
+- The optional AI advisory receives aggregate synthetic metrics only.
+- Runtime databases, logs, `.env` files, dependencies, and generated output are
+  excluded from Git.
+
+### Uncertainty and false positives
+
+Missing, stale, future-dated, malformed, or inconsistent inputs are represented
+explicitly and never silently converted into a healthy or zero balance. Sparse
+agent history is exempted from unfair baseline comparison. Confidence penalties
+show degraded feeds, thin horizons, sparse history, and volatile amounts.
+
+Expected false positives include holiday/payday demand, approved activity outside
+usual hours, legitimate new network relationships, concentrated operational
+events, and delayed provider snapshots. The 3σ threshold currently produces a
+0.0% synthetic demo-day false-positive rate; a 2σ threshold catches more subtle
+examples but produces a 4.25% false-positive rate. Human feedback labels
+`false_positive`, `contextual_spike`, and `insufficient_evidence` are recorded for
+review and do not automatically retrain or act on an account.
+
+### Prototype limitations
+
+This is a local hackathon prototype, not a production financial or fraud system.
+It does not provide real provider reconciliation, settlement, multi-tenant
+production isolation, disaster recovery, immutable external event sourcing,
+formal deletion workflows, representative population fairness measurement, or
+legal/regulatory approval. SQLite and deterministic fixtures are chosen for
+reviewability. Production deployment would require managed relational
+infrastructure, migrations, backups, an approved identity provider with MFA,
+rate limiting, key management, retention controls, independent security review,
+incident response, and an appeal process.
 
 ## SonarQube analysis
 
@@ -274,6 +382,20 @@ false-positive handling, refusal list — in
 - [docs/data-simulation-note.md](docs/data-simulation-note.md)
 - [docs/responsible-design-note.md](docs/responsible-design-note.md)
 - [docs/validation-evidence.md](docs/validation-evidence.md) *(generated)*
+- [docs/innovation-phase-1-step-1.md](docs/innovation-phase-1-step-1.md)
+- [docs/innovation-phase-1-step-2.md](docs/innovation-phase-1-step-2.md)
+- [docs/innovation-phase-2.md](docs/innovation-phase-2.md)
+- [docs/innovation-phase-3.md](docs/innovation-phase-3.md)
+- [docs/final-checklist-phase-1-step-1.md](docs/final-checklist-phase-1-step-1.md)
+- [docs/final-checklist-phase-1-step-2.md](docs/final-checklist-phase-1-step-2.md)
+- [docs/final-checklist-phase-2-step-3.md](docs/final-checklist-phase-2-step-3.md)
+- [docs/final-checklist-phase-2-step-4.md](docs/final-checklist-phase-2-step-4.md)
+- [docs/final-checklist-phase-3-step-5.md](docs/final-checklist-phase-3-step-5.md)
+- [docs/final-polish-phase-1-step-1.md](docs/final-polish-phase-1-step-1.md)
+- [docs/final-polish-phase-1-step-2.md](docs/final-polish-phase-1-step-2.md)
+- [docs/final-polish-phase-2-step-3.md](docs/final-polish-phase-2-step-3.md)
+- [docs/final-polish-phase-2-step-4.md](docs/final-polish-phase-2-step-4.md)
+- [docs/final-polish-phase-3-step-5.md](docs/final-polish-phase-3-step-5.md)
 - [docs/demo-script.md](docs/demo-script.md)
 - [docs/requirements-traceability.md](docs/requirements-traceability.md) *(brief §5–§16 → implementation: stakeholders, scope, functional, non-functional, scenarios A–D)*
 - [docs/rubric-compliance.md](docs/rubric-compliance.md) *(capability, metric, and non-functional requirement map)*

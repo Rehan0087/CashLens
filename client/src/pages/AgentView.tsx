@@ -48,6 +48,14 @@ export function AgentView() {
 
   const total = (detail.physicalCash ?? 0) + detail.providers.reduce((s, p) => s + (p.balance ?? 0), 0);
   const imbalanceAlert = detail.alerts.find((a) => a.type === "cross_provider_imbalance");
+  const supportingActivity = detail.alerts.find((a) => a.type === "unusual_transaction");
+
+  function focusSupportingActivity() {
+    if (!supportingActivity) return;
+    const card = document.getElementById(`alert-card-${supportingActivity.id}`);
+    card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    card?.focus({ preventScroll: true });
+  }
 
   function AgentPicker() {
     return (
@@ -99,6 +107,11 @@ export function AgentView() {
               {t("confidence")} {(detail.cashPredictionConfidence * 100).toFixed(0)}%
               {detail.cashConfidencePenalties.length > 0 ? ` · ${detail.cashConfidencePenalties.length} quality check${detail.cashConfidencePenalties.length === 1 ? "" : "s"}` : ""}
             </div>
+            {supportingActivity && (
+              <button className="btn primary" style={{ marginTop: 10 }} onClick={focusSupportingActivity} aria-controls={`alert-card-${supportingActivity.id}`}>
+                {t("reviewSupportingActivity")}
+              </button>
+            )}
           </div>
         </div>
 

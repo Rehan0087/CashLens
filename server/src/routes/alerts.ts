@@ -60,6 +60,15 @@ function localized(en: string, bn: string, banglish: string): LocalizedText {
   return { en, bn, banglish };
 }
 
+const COORDINATION_GUARDRAIL = {
+  mode: "human_review_only" as const,
+  recommendationOnly: true,
+  executedOperation: null,
+  financialMovement: "none" as const,
+  providerBoundaryEnforced: true,
+  note: "This workflow records human coordination and case status only; it does not move money or change an account.",
+};
+
 /**
  * A cross-provider alert is useful to every provider's operations team, but
  * it must not disclose another provider's exact balance or the agent's cash
@@ -219,6 +228,7 @@ alertsRouter.get("/:id", (req, res) => {
     notes,
     feedback,
     workflowEvents,
+    coordination: COORDINATION_GUARDRAIL,
     agentContext: liq ? maskLiquidityForRole(liq, role, providerId) : null,
     allowedActions: allowedActions(row.status, role, row.type),
     noteRequiredFor: { escalate: noteRequired("escalate"), resolve: noteRequired("resolve"), acknowledge: noteRequired("acknowledge") },
@@ -271,7 +281,7 @@ alertsRouter.post("/:id/feedback", (req, res) => {
     );
   });
 
-  res.status(201).json({ ok: true, id: feedbackId, outcome, ruleVersion: "context-aware-spike-v1" });
+  res.status(201).json({ ok: true, id: feedbackId, outcome, ruleVersion: "context-aware-spike-v1", coordination: COORDINATION_GUARDRAIL });
 });
 
 // Case action: acknowledge / escalate / resolve, with server-enforced authority rules.
@@ -326,5 +336,13 @@ alertsRouter.post("/:id/action", (req, res) => {
     );
   });
 
-  res.json({ ok: true, id: row.id, previousStatus: row.status, status: newStatus, previousAssignedRole: row.assigned_role, assignedRole: newRole });
+  res.json({
+    ok: true,
+    id: row.id,
+    previousStatus: row.status,
+    status: newStatus,
+    previousAssignedRole: row.assigned_role,
+    assignedRole: newRole,
+    coordination: COORDINATION_GUARDRAIL,
+  });
 });

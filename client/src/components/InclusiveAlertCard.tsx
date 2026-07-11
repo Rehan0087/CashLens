@@ -14,7 +14,7 @@ export function InclusiveAlertCard({ alert }: { alert: AgentAlertSummary }) {
   const headingId = `alert-heading-${alert.id}`;
 
   return (
-    <article className="inclusive-alert-card" role={alert.severity === "high" ? "alert" : "status"} aria-labelledby={headingId}>
+    <article id={`alert-card-${alert.id}`} tabIndex={-1} className="inclusive-alert-card" role={alert.severity === "high" ? "alert" : "status"} aria-labelledby={headingId}>
       <div className="inclusive-alert-head">
         <SeverityChip severity={alert.severity} t={t} />
         <h3 id={headingId}>{typeLabel(alert.type, t)}</h3>

@@ -141,6 +141,7 @@ export function CasePanel({
       <p style={{ fontSize: 13.5 }}>{pickText(detail.evidence.explanation, language)}</p>
 
       <div className="callout">{pickText(detail.evidence.suggestedAction, language)}</div>
+      <div className="callout success" role="status">{t("coordinationAdvisory")}</div>
 
       <div>
         <div className="eyebrow">{t("evidence")}</div>

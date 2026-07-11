@@ -231,3 +231,70 @@ Verification:
 - Python detector tests and lifecycle logger compilation
 - Provider masking and alert lifecycle smoke tests
 ```
+
+## Final judge-polish prompt
+
+```text
+Act as a strict Hackathon Judge and Lead UX/UI Designer reviewing the Super
+Agent Liquidity & Risk Intelligence Platform.
+
+Optimize for the grading philosophy that the strongest submission makes a
+complex multi-provider situation simple to understand, connects liquidity
+insight with unusual-activity evidence, and provides clear coordination without
+unsafe integration, unsupported accusations, or automatic financial action.
+
+Phase 1 — Simplicity audit:
+- Make shared physical cash and separate provider e-money balances instantly
+  understandable in the multi-provider view.
+- Connect a liquidity warning directly to the supporting unusual-activity
+  evidence as one narrative.
+
+Phase 2 — Advisory and safe polish:
+- Remove accusatory or enforcement language and provide careful English,
+  Bengali, and Banglish review-first copy.
+- Make coordination responses explicitly recommendation-only, with no transfer,
+  top-up, freeze, block, or provider-boundary override.
+
+Phase 3 — Final pitch:
+- Write a timed three-minute Eid-afternoon demo script showing the simple balance
+  model, forward-looking warning, evidence, human handoff, and visible closure.
+
+Constraints:
+- Preserve synthetic data, normalized SQL separation, server-side masking,
+  human review, and existing workflow authority.
+- Never claim fraud, guilt, or production accuracy.
+- Never execute financial actions or connect to real provider infrastructure.
+- Validate builds and update the relevant documentation.
+```
+
+## Final judge-polish implementation record
+
+- Phase 1, Step 1: `docs/final-polish-phase-1-step-1.md` — simplicity audit and
+  shared-cash/separate-float capacity-board proposal.
+- Phase 1, Step 2: `docs/final-polish-phase-1-step-2.md` — direct liquidity to
+  supporting-activity navigation with accessible focus behavior.
+- Phase 2, Step 3: `docs/final-polish-phase-2-step-3.md` — forbidden language
+  checklist and review-first English/Banglish copy.
+- Phase 2, Step 4: `docs/final-polish-phase-2-step-4.md` — explicit
+  human-review-only coordination response and UI guardrail.
+- Phase 3, Step 5: `docs/final-polish-phase-3-step-5.md` — three-minute story-
+  driven judge presentation script.
+
+Commit requirement for final polish:
+
+```text
+Prompt: Complete the CashLens final judge-polish phases.
+
+Goal:
+Make the multi-provider model simple, connect liquidity to evidence, sanitize
+risk language, prove coordination is recommendation-only, and provide the final
+three-minute presentation story.
+
+Verification:
+- npm.cmd run build (server)
+- npm.cmd run build (client)
+- npm.cmd run seed
+- npm.cmd run verify:risk-language
+- npm.cmd run verify:lifecycle
+- git diff --check
+```
