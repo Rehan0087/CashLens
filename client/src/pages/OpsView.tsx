@@ -13,7 +13,7 @@ function pickText(lt: { en: string; bn: string; banglish: string }, lang: Langua
 }
 
 export function OpsView() {
-  const { t, language, meta, providerId, setProviderId, focusCaseId, setFocusCaseId } = useApp();
+  const { t, language, meta, user, providerId, setProviderId, focusCaseId, setFocusCaseId } = useApp();
   const [alerts, setAlerts] = useState<AlertListItem[]>([]);
   const [agents, setAgents] = useState<AgentLiquidity[]>([]);
   const [status, setStatus] = useState<(typeof STATUSES)[number]>("all");
@@ -81,7 +81,7 @@ export function OpsView() {
           <div className="page-sub">{t("roleOpsDesc")}</div>
         </div>
         <div className="segmented" role="group" aria-label="Provider">
-          {meta?.providers.map((p) => (
+          {meta?.providers.filter((p) => !user?.providerId || p.id === user.providerId).map((p) => (
             <button key={p.id} className={providerId === p.id ? "active" : ""} onClick={() => setProviderId(p.id)}>
               <span className="dot" style={{ display: "inline-block", width: 7, height: 7, borderRadius: 99, background: providerColor(p.id), marginRight: 6 }} />
               {p.name}

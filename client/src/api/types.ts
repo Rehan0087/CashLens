@@ -8,6 +8,15 @@ export type ProviderDataState = "fresh" | "stale" | "missing" | "inconsistent";
 export type ForecastConfidencePenalty = "degraded_feed" | "sparse_history" | "thin_horizon" | "volatile_amounts";
 export type CaseAction = "acknowledge" | "escalate" | "resolve";
 
+export interface AuthUser {
+  id: string;
+  username: string;
+  displayName: string;
+  role: Role;
+  providerId: string | null;
+  agentId: string | null;
+}
+
 export interface LocalizedText {
   en: string;
   bn: string;

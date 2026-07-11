@@ -2,6 +2,8 @@ import { Router } from "express";
 import { liveTransactionStream } from "../simulation/liveTransactionStream.js";
 
 export const liveFeedRouter = Router();
+// This feed is intentionally public to the landing-page demo: it contains only
+// synthetic aggregate activity and no role-scoped balances or cases.
 
 liveFeedRouter.get("/snapshot", (_req, res) => {
   res.json(liveTransactionStream.snapshot());

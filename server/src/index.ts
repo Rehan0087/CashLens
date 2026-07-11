@@ -13,6 +13,8 @@ import { observeApiRequest } from "./observability.js";
 import { liveFeedRouter } from "./routes/liveFeed.js";
 import { liveTransactionStream } from "./simulation/liveTransactionStream.js";
 import { startOpenAiAdvisor } from "./ai/openaiAdvisor.js";
+import { ensureDemoUsers } from "./auth.js";
+import { authRouter } from "./routes/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 try {
@@ -32,6 +34,7 @@ const agentCount = (db.prepare("SELECT COUNT(*) AS n FROM agents").get() as { n:
 if (agentCount === 0) {
   console.warn("Database is empty — run `npm run seed` first, then restart.");
 } else {
+  ensureDemoUsers();
   const alertCount = (db.prepare("SELECT COUNT(*) AS n FROM alerts").get() as { n: number }).n;
   if (alertCount === 0) {
     // First boot after a bare seed: populate alerts. Never re-run automatically
@@ -46,6 +49,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api", observeApiRequest);
 
+app.use("/api/auth", authRouter);
 app.use("/api", miscRouter);
 app.use("/api/agents", agentsRouter);
 app.use("/api/alerts", alertsRouter);

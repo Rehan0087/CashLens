@@ -11,15 +11,28 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { LiveFeedView } from "./pages/LiveFeedView";
 
 export default function App() {
-  const { role, setRole, language, setLanguage, meta, t, scenariosOpen, setScenariosOpen, liveOpen, setLiveOpen } = useApp();
+  const { user, authLoading, logout, language, setLanguage, meta, t, scenariosOpen, setScenariosOpen, liveOpen, setLiveOpen } = useApp();
 
-  if (!role && !scenariosOpen && !liveOpen) return <RoleSelect />;
+  if (authLoading) return <div className="auth-loading">{t("loading")}</div>;
+  if (!user && liveOpen) {
+    return (
+      <div className="shell public-live-shell">
+        <main className="main">
+          <button className="app-brand" type="button" onClick={() => setLiveOpen(false)} aria-label={t("backToLanding")}>
+            <span className="logo-mark">৳</span>
+            <span>
+              <div className="logo-name">CashLens</div>
+              <div className="logo-tag">{t("tagline")}</div>
+            </span>
+          </button>
+          <LiveFeedView />
+        </main>
+      </div>
+    );
+  }
+  if (!user) return <RoleSelect />;
 
-  const backToLanding = () => {
-    setScenariosOpen(false);
-    setLiveOpen(false);
-    setRole(null);
-  };
+  const backToLanding = () => { void logout(); };
 
   return (
     <div className="shell">
@@ -35,7 +48,8 @@ export default function App() {
 
           <div className="app-bar-actions">
             {meta && <span className="sim-chip">{t("simulated")} · {formatSimTime(meta.simNow)}</span>}
-            {role === "agent" && (
+            <span className="user-chip">{user.displayName}</span>
+            {user.role === "agent" && (
               <button className={`btn app-nav-btn${scenariosOpen ? " active" : ""}`} onClick={() => { setScenariosOpen(true); setLiveOpen(false); }}>
                 <span aria-hidden="true">🎬</span> {t("guidedScenarios")}
               </button>
@@ -61,11 +75,11 @@ export default function App() {
         ) : (
           <>
             <ScenarioBanner />
-            {role === "agent" && <AgentView />}
-            {role === "provider_ops" && <OpsView />}
-            {role === "risk_analyst" && <RiskView />}
-            {role === "financial_service_provider" && <FspView />}
-            {role === "fsp_management" && <MgmtView />}
+            {user.role === "agent" && <AgentView />}
+            {user.role === "provider_ops" && <OpsView />}
+            {user.role === "risk_analyst" && <RiskView />}
+            {user.role === "financial_service_provider" && <FspView />}
+            {user.role === "fsp_management" && <MgmtView />}
           </>
         )}
       </main>

@@ -1,15 +1,17 @@
 import { Router } from "express";
 import { db, getSimNow } from "../db/index.js";
 import { computeAgentLiquidity, maskLiquidityForRole } from "../engine/liquidityScorer.js";
-import { roleOf, providerIdOf } from "./helpers.js";
+import { agentIdOf, roleOf, providerIdOf } from "./helpers.js";
+import { requireAuth } from "../auth.js";
 
 export const agentsRouter = Router();
+agentsRouter.use(requireAuth);
 
 // List all agents with their liquidity snapshot, masked for the requesting role.
 agentsRouter.get("/", (req, res) => {
   const role = roleOf(req);
   const providerId = providerIdOf(req);
-  const requestedAgentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
+  const requestedAgentId = agentIdOf(req);
   if (role === "fsp_management") {
     return res.status(403).json({ error: "FSP management sees aggregates only — use /api/overview" });
   }
@@ -33,11 +35,11 @@ agentsRouter.get("/", (req, res) => {
 agentsRouter.get("/:id", (req, res) => {
   const role = roleOf(req);
   const providerId = providerIdOf(req);
-  const requestedAgentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
+  const requestedAgentId = agentIdOf(req);
   if (role === "fsp_management") {
     return res.status(403).json({ error: "FSP management sees aggregates only — use /api/overview" });
   }
-  if (role === "agent" && requestedAgentId !== req.params.id) {
+  if (role === "agent" && req.user?.agentId && req.user.agentId !== req.params.id) {
     return res.status(403).json({ error: "Agents can view only their own operation." });
   }
   const [liq] = computeAgentLiquidity(req.params.id);

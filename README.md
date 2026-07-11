@@ -29,7 +29,112 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 and pick a role. The demo dataset is anchored to a frozen
+## Ubuntu/Linux setup
+
+The documented target is Ubuntu 22.04+ or another current Linux distribution.
+Node.js 24+ is required because the server uses Node's built-in SQLite support.
+
+```bash
+sudo apt update
+sudo apt install -y git curl python3
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+source "$HOME/.nvm/nvm.sh"
+nvm install 24
+nvm use 24
+
+git clone https://github.com/Rehan0087/CashLens.git
+cd CashLens
+
+cd server
+npm ci
+cp .env.example .env
+npm run seed
+npm run build
+
+cd ../client
+npm ci
+npm run build
+```
+
+For development, use two terminals:
+
+```bash
+# terminal 1
+cd CashLens/server
+npm run dev
+
+# terminal 2
+cd CashLens/client
+npm run dev
+```
+
+Open `http://localhost:5173`. In production mode, build the client and server,
+then run `npm start` from `server/`; the Express server serves `client/dist` when
+that directory exists.
+
+### Environment variables
+
+Copy `server/.env.example` to `server/.env` for local development. `.env` is
+ignored by Git and must never be committed.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `PORT` | `4000` | Express API and production web-server port |
+| `HOST` | `127.0.0.1` | Bind address; use `0.0.0.0` only for an intentional LAN demo |
+| `OPENAI_API_KEY` | empty | Optional key for the synthetic advisory only |
+| `OPENAI_MODEL` | `gpt-5.6` | Optional advisory model override |
+
+### Demo sign-in accounts
+
+The landing page uses server-side demo authentication. Passwords are stored as
+salted scrypt hashes and successful sign-in creates an HttpOnly session cookie.
+For the synthetic hackathon dataset, all demo accounts use the password
+`cashlens-demo`:
+
+| Username | Role/scope |
+|---|---|
+| `agent.demo` | Multi-provider agent demo scope |
+| `ops.bkash` | bKash provider operations |
+| `risk.reviewer` | Risk/compliance reviewer |
+| `fsp.bkash` | bKash financial-service provider |
+| `management` | Aggregate operations management |
+
+The client cannot choose a different role by editing a URL. The server derives
+role, provider scope, and agent scope from the authenticated session. These are
+demo credentials only; production requires an identity provider, MFA, rate
+limiting, recovery controls, and a real password policy.
+
+The application remains fully usable without `OPENAI_API_KEY`; deterministic local
+signals remain authoritative and the AI advisory is shown as disabled.
+
+### Loading sample data
+
+The integrated application seed is the recommended path:
+
+```bash
+cd server
+npm run seed
+```
+
+For a portable SQL fixture, generate data with Python's standard library:
+
+```bash
+cd CashLens
+python3 server/scripts/generate_synthetic_sql.py \
+  --seed 42 \
+  --agents 36 \
+  --days 14 \
+  --sim-now 2026-07-12T16:00:00+06:00 \
+  --output server/data/synthetic_seed.sql
+```
+
+The generated SQL is compatible with `server/src/db/schema.sql` and contains
+providers, agents, separate balances, transactions, simulation metadata, and
+validation labels. It does not insert alerts; run the application's detection
+pass after loading a fixture. Full assumptions and limitations are documented in
+[docs/data-simulation-note.md](docs/data-simulation-note.md).
+
+Open http://localhost:5173, sign in with a demo identity, and enter its authorized workspace. The demo dataset is anchored to a frozen
 simulated clock (**today 16:00**, the afternoon peak) and a fixed PRNG seed (**42**),
 so every run reproduces the same story.
 
@@ -135,6 +240,26 @@ Headline numbers on the fixed seed: **75% recall** (the misses are deliberately 
 2.2σ anomalies — catching them costs 29 false positives, shown in the threshold sweep),
 **0.0% FPR**, **100% precision**, **100% scenario coverage**, **~8ms** full detection pass.
 
+## SonarQube analysis
+
+GitHub Actions runs the client/server builds and a SonarQube scan on every push and
+pull request. The workflow is defined in
+`.github/workflows/sonarqube.yml`, with project settings in
+`sonar-project.properties`.
+
+Before the first run, create a matching project in SonarQube Server with the key
+`Rehan0087_CashLens`, then add these repository secrets under **Settings → Secrets
+and variables → Actions**:
+
+- `SONAR_HOST_URL`: the reachable URL of the SonarQube Server instance, such as
+  `https://sonarqube.example.com`.
+- `SONAR_TOKEN`: a project or user analysis token with permission to submit scans.
+
+The SonarQube Server must be reachable from GitHub-hosted runners. The workflow
+uses Node.js 24, installs both lockfiles with `npm ci`, builds the client and server,
+and then analyzes `client/src` and `server/src` while excluding dependencies,
+generated output, runtime data, logs, and documentation.
+
 ## Responsible design
 
 The prototype deliberately cannot: move money, merge wallets, block accounts, name
@@ -145,6 +270,7 @@ false-positive handling, refusal list — in
 ## Docs index
 
 - [docs/architecture-diagram.md](docs/architecture-diagram.md)
+- [docs/core-prototype-flow.md](docs/core-prototype-flow.md)
 - [docs/data-simulation-note.md](docs/data-simulation-note.md)
 - [docs/responsible-design-note.md](docs/responsible-design-note.md)
 - [docs/validation-evidence.md](docs/validation-evidence.md) *(generated)*

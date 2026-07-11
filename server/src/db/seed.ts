@@ -4,6 +4,7 @@ import { computeSimNow } from "../simulation/simClock.js";
 import { PROVIDERS, generateAgents, generateBalances, generateTransactions } from "../simulation/syntheticDataGenerator.js";
 import { injectTransactionAnomalies } from "../simulation/anomalyInjector.js";
 import { runDetection } from "../engine/runDetection.js";
+import { ensureDemoUsers } from "../auth.js";
 
 const SEED = 42; // fixed seed -> reproducible demo data for judges
 const AGENT_COUNT = 36;
@@ -22,7 +23,7 @@ function seed() {
 
   inTransaction(() => {
     db.exec(
-      "DELETE FROM case_notes; DELETE FROM alerts; DELETE FROM transactions; DELETE FROM agent_provider_balances; DELETE FROM agents; DELETE FROM providers;"
+      "DELETE FROM sessions; DELETE FROM users; DELETE FROM case_notes; DELETE FROM alerts; DELETE FROM transactions; DELETE FROM agent_provider_balances; DELETE FROM agents; DELETE FROM providers;"
     );
 
     const insertProvider = db.prepare("INSERT INTO providers (id, name) VALUES (?, ?)");
@@ -41,6 +42,8 @@ function seed() {
       insertTx.run(tx.id, tx.agentId, tx.providerId, tx.type, tx.amount, tx.timestamp, tx.isSyntheticAnomaly ? 1 : 0, tx.anomalyKind);
     }
   });
+
+  ensureDemoUsers();
 
   setMeta("sim_now", simNow.toISOString());
   setMeta("seeded_at", new Date().toISOString());

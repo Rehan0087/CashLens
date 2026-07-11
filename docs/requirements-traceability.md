@@ -9,7 +9,7 @@ SUST CSE Carnival 2026) to concrete implementation. Section numbers follow the b
 
 The brief defines "Operations Team" as *the people who help agents keep serving
 customers* — a general challenge role, not any provider's real org chart. All six brief
-stakeholders are represented: **five interactive roles** in the role picker, plus
+stakeholders are represented: **five authenticated demo identities/roles** in the landing sign-in, plus
 **Customers** as the acknowledged beneficiary (shown on the role screen, deliberately not
 an operator). Each role's visibility boundary is **enforced in the API**
 (`server/src/routes/*` + `maskLiquidityForRole`), not just hidden in the UI.
@@ -52,7 +52,7 @@ area-level readiness) — they are not conflated into one "FSP Management" scree
 - No production APIs, real identities, real balances, or real accounts — 100% synthetic seed.
 - No automatic blocking, accusation, disciplinary action, or final fraud determination.
 - No unauthorized cash movement, refill, transfer, recovery, or reversal.
-- No collection of PINs, OTPs, passwords, or authentication data — none in the schema.
+- No collection of real PINs, OTPs, or production credentials — only salted hashes for synthetic demo identities are stored.
 - No claim of regulatory approval or production fraud-detection readiness — stated in `responsible-design-note.md`.
 
 ---
@@ -88,7 +88,7 @@ Legend: ✅ implemented · ◐ partially (what-if + imbalance; no peer-graph vie
 | Performance | Core analytics/dashboard responsive at the demonstrated volume | Full detection pass ~8 ms; dashboard-assembly p95 ~2 ms; API read p95 tracked (`metrics.performance`) |
 | Reliability | Provider data failures/inconsistencies must not silently produce confident conclusions | `assessProviderInput` classifies fresh/stale/missing/inconsistent; degraded input → reduced confidence + "unconfirmed", never zero-filled |
 | Explainability | Every high-impact alert exposes reason, evidence, uncertainty | `evidence_json` (signals + explanation + suggested action + confidence); explanation-coverage metric |
-| Security & privacy | Synthetic identifiers; no real credentials/identities/account data | Synthetic seed only; no PIN/OTP/password fields anywhere |
+| Security & privacy | Synthetic identifiers; no real credentials/identities/account data | Demo identities use salted password hashes, HttpOnly sessions, server-side scope, and no production credentials |
 | Fairness & responsible AI | Avoid unsupported profiling; demonstrate human review | Per-agent baselines (not cross-agent), <10-tx agents exempted; note-gated human workflow |
 | Auditability | Alerts, ownership changes, acks, escalations, evidence, resolutions traceable | Append-only `case_notes`; per-request structured logs + trace ids (`observability.ts`) |
 | Interoperability | Represent multiple providers without assuming real technical integration | Providers are logically separate rows; no integration is implied or attempted |
@@ -147,7 +147,7 @@ Management view, and written to `docs/validation-evidence.md`.
 ## §14 Constraints & Guardrails — compliance
 
 All satisfied: simulated data only · providers logically separate, no conversion/settlement ·
-no real wallets/accounts/infrastructure · no PINs/OTPs/passwords · risk signals advisory,
+no real wallets/accounts/infrastructure · no real PINs/OTPs/credentials (demo hashes only) · risk signals advisory,
 never a final fraud determination · no automatic block/freeze/accuse/initiate · coordination
 may notify/assign/escalate/recommend/track but never bypasses authorization, exposes another
 provider's confidential data, or transfers liquidity · assumptions, synthetic patterns, test

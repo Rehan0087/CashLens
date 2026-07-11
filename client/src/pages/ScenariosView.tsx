@@ -15,7 +15,7 @@ const SCENARIO_ACCENT: Record<string, string> = {
 };
 
 export function ScenariosView() {
-  const { t, language, openScenario } = useApp();
+  const { t, language, user, openScenario } = useApp();
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [error, setError] = useState("");
 
@@ -38,18 +38,14 @@ export function ScenariosView() {
         {scenarios.map((s) => (
           <div className="scenario-card rise" key={s.id} style={{ ["--accent" as string]: SCENARIO_ACCENT[s.id] }}>
             <div className="scenario-card-head">
-              <span className="scenario-badge" style={{ background: SCENARIO_ACCENT[s.id] }}>
-                {s.id}
-              </span>
+              <span className="scenario-badge" style={{ background: SCENARIO_ACCENT[s.id] }}>{s.id}</span>
               <div className="scenario-title">{pickText(s.title, language)}</div>
             </div>
 
             <p className="scenario-brief">{pickText(s.brief, language)}</p>
 
             <div className="scenario-notice">
-              <span className="eyebrow" style={{ marginBottom: 4 }}>
-                {t("scenarioWhatToNotice")}
-              </span>
+              <span className="eyebrow" style={{ marginBottom: 4 }}>{t("scenarioWhatToNotice")}</span>
               {pickText(s.whatToNotice, language)}
             </div>
 
@@ -65,10 +61,10 @@ export function ScenariosView() {
             )}
 
             <div className="scenario-card-foot">
-              {s.available ? (
-                <button className="btn primary" onClick={() => openScenario(s)}>
-                  {t("scenarioOpen")} →
-                </button>
+              {s.available && s.target.role === user?.role ? (
+                <button className="btn primary" onClick={() => openScenario(s)}>{t("scenarioOpen")} →</button>
+              ) : s.available ? (
+                <span className="chip ghost">{t("scenarioRoleRequired")}</span>
               ) : (
                 <span className="chip ghost">{t("scenarioUnavailable")}</span>
               )}

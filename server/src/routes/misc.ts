@@ -8,6 +8,7 @@ import { computeMetrics, type MetricsReport } from "../engine/metrics.js";
 import { computeScenarios } from "../engine/scenarios.js";
 import { roleOf, providerIdOf } from "./helpers.js";
 import { inspectProviderInputs, observabilitySnapshot } from "../observability.js";
+import { requireAuth } from "../auth.js";
 
 export const miscRouter = Router();
 
@@ -32,6 +33,9 @@ miscRouter.get("/ready", (_req, res) => {
     res.status(503).json({ ready: false, error: "Dataset is not seeded." });
   }
 });
+
+// All data-bearing routes require the authenticated session established by /api/auth/login.
+miscRouter.use(requireAuth);
 
 // Contains only operational counters and feed health; no balances or case data.
 miscRouter.get("/observability", (_req, res) => {
@@ -80,6 +84,9 @@ miscRouter.get("/metrics", (_req, res) => {
 miscRouter.get("/whatif/:agentId", (req, res) => {
   const role = roleOf(req);
   const providerId = providerIdOf(req);
+  if (role === "agent" && req.user?.agentId && req.user.agentId !== req.params.agentId) {
+    return res.status(403).json({ error: "Agents can preview only their own operation." });
+  }
   if (role === "fsp_management" || role === "financial_service_provider") {
     return res.status(403).json({ error: "This role sees aggregates only — individual what-if scenarios are unavailable." });
   }

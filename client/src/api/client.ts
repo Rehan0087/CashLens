@@ -12,6 +12,7 @@ import type {
   Scenario,
   WhatIf,
   LiveSnapshot,
+  AuthUser,
 } from "./types";
 
 async function get<T>(path: string): Promise<T> {
@@ -24,24 +25,34 @@ async function get<T>(path: string): Promise<T> {
 }
 
 export const api = {
-  meta: () => get<Meta>("/api/meta"),
-  agents: (role: Role, providerId?: string, agentId?: string) =>
-    get<AgentLiquidity[]>(`/api/agents?role=${role}${providerId ? `&providerId=${providerId}` : ""}${agentId ? `&agentId=${agentId}` : ""}`),
-  agentDetail: (id: string, role: Role, providerId?: string) =>
-    get<AgentDetail>(`/api/agents/${id}?role=${role}${providerId ? `&providerId=${providerId}` : ""}${role === "agent" ? `&agentId=${id}` : ""}`),
-  alerts: (role: Role, opts: { providerId?: string; status?: string; agentId?: string } = {}) => {
-    const params = new URLSearchParams({ role });
-    if (opts.providerId) params.set("providerId", opts.providerId);
-    if (opts.status) params.set("status", opts.status);
-    if (opts.agentId) params.set("agentId", opts.agentId);
-    return get<AlertListItem[]>(`/api/alerts?${params}`);
+  login: async (username: string, password: string) => {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error ?? "Sign in failed");
+    }
+    return res.json() as Promise<{ user: AuthUser }>;
   },
-  caseDetail: (id: string, role: Role, providerId?: string) =>
-    get<CaseDetail>(`/api/alerts/${id}?role=${role}${providerId ? `&providerId=${providerId}` : ""}`),
-  caseAction: async (id: string, action: CaseAction, role: Role, note: string, providerId?: string) => {
-    const params = new URLSearchParams({ role });
-    if (providerId) params.set("providerId", providerId);
-    const res = await fetch(`/api/alerts/${id}/action?${params}`, {
+  me: () => get<{ user: AuthUser }>("/api/auth/me"),
+  logout: async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+  },
+  meta: () => get<Meta>("/api/meta"),
+  agents: (_role: Role, _providerId?: string, _agentId?: string) => get<AgentLiquidity[]>("/api/agents"),
+  agentDetail: (id: string, _role: Role, _providerId?: string) => get<AgentDetail>(`/api/agents/${id}`),
+  alerts: (role: Role, opts: { providerId?: string; status?: string; agentId?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (opts.status) params.set("status", opts.status);
+    if (role === "agent" && opts.agentId) params.set("agentId", opts.agentId);
+    return get<AlertListItem[]>(`/api/alerts${params.toString() ? `?${params}` : ""}`);
+  },
+  caseDetail: (id: string, _role: Role, _providerId?: string) => get<CaseDetail>(`/api/alerts/${id}`),
+  caseAction: async (id: string, action: CaseAction, _role: Role, note: string, _providerId?: string) => {
+    const res = await fetch(`/api/alerts/${id}/action`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, note }),
@@ -56,10 +67,7 @@ export const api = {
   scenarios: () => get<Scenario[]>("/api/scenarios"),
   metrics: () => get<MetricsReport>("/api/metrics"),
   observability: () => get<Observability>("/api/observability"),
-  whatIf: (agentId: string, multiplier: number, role: Role, providerId?: string) =>
-    get<WhatIf>(
-      `/api/whatif/${agentId}?multiplier=${multiplier}&role=${role}${providerId ? `&providerId=${providerId}` : ""}`
-    ),
+  whatIf: (agentId: string, multiplier: number, _role: Role, _providerId?: string) => get<WhatIf>(`/api/whatif/${agentId}?multiplier=${multiplier}`),
   liveSnapshot: () => get<LiveSnapshot>("/api/live-feed/snapshot"),
   liveControl: async (action: "pause" | "resume" | "inject_liquidity_drain" | "inject_anomaly_attack") => {
     const res = await fetch("/api/live-feed/control", {

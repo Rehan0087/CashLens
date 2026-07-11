@@ -26,7 +26,7 @@ function feedStatus(state: AgentDetail["providers"][number]["dataState"], staleM
 }
 
 export function AgentView() {
-  const { t, language, meta, agentId, setAgentId } = useApp();
+  const { t, language, meta, user, agentId, setAgentId } = useApp();
   const [detail, setDetail] = useState<AgentDetail | null>(null);
   const [loadError, setLoadError] = useState("");
 
@@ -58,7 +58,7 @@ export function AgentView() {
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
           <span className="muted mono">{t("demoSelector")}</span>
           <select value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-            {meta?.agents.map((a) => (
+            {meta?.agents.filter((a) => !user?.agentId || a.id === user.agentId).map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name} — {a.area}
               </option>

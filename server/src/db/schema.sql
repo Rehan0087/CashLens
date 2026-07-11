@@ -62,6 +62,28 @@ CREATE TABLE IF NOT EXISTS case_notes (
   timestamp  TEXT NOT NULL
 );
 
+-- Demo authentication identities. Passwords are stored as salted scrypt hashes;
+-- provider/agent scope is server-side session data, never a client query choice.
+CREATE TABLE IF NOT EXISTS users (
+  id            TEXT PRIMARY KEY,
+  username      TEXT NOT NULL UNIQUE,
+  display_name  TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  role          TEXT NOT NULL CHECK (role IN ('agent', 'provider_ops', 'risk_analyst', 'financial_service_provider', 'fsp_management')),
+  provider_id   TEXT REFERENCES providers(id),
+  agent_id      TEXT REFERENCES agents(id),
+  created_at    TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON sessions(expires_at);
+
 -- Simulation anchor values (e.g. the frozen "now" the whole demo is computed against)
 CREATE TABLE IF NOT EXISTS sim_meta (
   key   TEXT PRIMARY KEY,

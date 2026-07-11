@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Language, Meta, Role, Scenario } from "./api/types";
+import type { AuthUser, Language, Meta, Role, Scenario } from "./api/types";
 import { api } from "./api/client";
 import { makeT, type TFunc } from "./i18n/ui";
 
@@ -11,8 +11,11 @@ function savedTheme(): Theme {
 }
 
 interface AppState {
+  user: AuthUser | null;
+  authLoading: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   role: Role | null;
-  setRole: (r: Role | null) => void;
   language: Language;
   setLanguage: (l: Language) => void;
   theme: Theme;
@@ -23,7 +26,6 @@ interface AppState {
   setAgentId: (a: string) => void;
   meta: Meta | null;
   t: TFunc;
-  // Guided demonstration scenarios (A–D)
   scenariosOpen: boolean;
   setScenariosOpen: (open: boolean) => void;
   activeScenario: Scenario | null;
@@ -38,7 +40,8 @@ interface AppState {
 const Ctx = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<Role | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [language, setLanguage] = useState<Language>((localStorage.getItem("cashlens.lang") as Language) ?? "en");
   const [theme, setTheme] = useState<Theme>(savedTheme);
   const [providerId, setProviderId] = useState("bkash");
@@ -49,24 +52,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [focusCaseId, setFocusCaseId] = useState<string | null>(null);
   const [liveOpen, setLiveOpen] = useState(false);
 
-  // Deep-link a guided scenario to the exact role/agent/case that exhibits it.
+  useEffect(() => {
+    api.me()
+      .then(({ user: currentUser }) => {
+        setUser(currentUser);
+        setProviderId(currentUser.providerId ?? "bkash");
+        setAgentId(currentUser.agentId ?? "");
+      })
+      .catch(() => setUser(null))
+      .finally(() => setAuthLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setMeta(null);
+      return;
+    }
+    api.meta().then((m) => {
+      setMeta(m);
+      if (!user.agentId) setAgentId((prev) => prev || m.agents[4]?.id || m.agents[0]?.id || "");
+    });
+  }, [user]);
+
+  const login = async (username: string, password: string) => {
+    const result = await api.login(username, password);
+    setUser(result.user);
+    setProviderId(result.user.providerId ?? "bkash");
+    setAgentId(result.user.agentId ?? "");
+    setScenariosOpen(false);
+    setLiveOpen(false);
+    setAuthLoading(false);
+  };
+
+  const logout = async () => {
+    await api.logout();
+    setUser(null);
+    setMeta(null);
+    setScenariosOpen(false);
+    setLiveOpen(false);
+    setActiveScenario(null);
+    setFocusCaseId(null);
+  };
+
+  // A scenario cannot change the authenticated user's role. Cross-role scenarios
+  // require signing in as the target role from the landing page.
   const openScenario = (s: Scenario) => {
+    if (!user || s.target.role !== user.role) return;
     setActiveScenario(s);
-    if (s.target.providerId) setProviderId(s.target.providerId);
-    if (s.target.agentId) setAgentId(s.target.agentId);
+    if (s.target.providerId && (!user.providerId || s.target.providerId === user.providerId)) setProviderId(s.target.providerId);
+    if (s.target.agentId && (!user.agentId || s.target.agentId === user.agentId)) setAgentId(s.target.agentId);
     setFocusCaseId(s.target.caseId ?? null);
-    setRole(s.target.role);
     setScenariosOpen(false);
     setLiveOpen(false);
   };
-
-  useEffect(() => {
-    api.meta().then((m) => {
-      setMeta(m);
-      // Default demo agent: one with an engineered story beats a random quiet one.
-      if (m.agents.length > 0) setAgentId((prev) => prev || m.agents[4]?.id || m.agents[0].id);
-    });
-  }, []);
 
   useEffect(() => {
     localStorage.setItem("cashlens.lang", language);
@@ -79,10 +117,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [theme]);
 
   const t = useMemo(() => makeT(language), [language]);
-
   const value: AppState = {
-    role,
-    setRole,
+    user,
+    authLoading,
+    login,
+    logout,
+    role: user?.role ?? null,
     language,
     setLanguage,
     theme,
@@ -97,10 +137,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setScenariosOpen,
     activeScenario,
     setActiveScenario,
-    focusCaseId,
-    setFocusCaseId,
     liveOpen,
     setLiveOpen,
+    focusCaseId,
+    setFocusCaseId,
     openScenario,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -4,9 +4,11 @@ import { db } from "../db/index.js";
 import { computeAgentLiquidity, maskLiquidityForRole } from "../engine/liquidityScorer.js";
 import { allowedActions, nextAssignedRole, nextStatus, noteRequired, type CaseAction } from "../engine/workflow.js";
 import type { AlertEvidence, AlertStatus, AlertType, LocalizedText, Role } from "../types.js";
-import { roleOf, providerIdOf } from "./helpers.js";
+import { agentIdOf, roleOf, providerIdOf } from "./helpers.js";
+import { requireAuth } from "../auth.js";
 
 export const alertsRouter = Router();
+alertsRouter.use(requireAuth);
 
 interface AlertRow {
   id: string;
@@ -125,7 +127,7 @@ alertsRouter.get("/", (req, res) => {
   const role = roleOf(req);
   const providerId = providerIdOf(req);
   const status = typeof req.query.status === "string" && req.query.status !== "all" ? req.query.status : undefined;
-  const agentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
+  const agentId = agentIdOf(req);
 
   const where: string[] = [];
   const params: string[] = [];
@@ -164,7 +166,7 @@ alertsRouter.get("/", (req, res) => {
 alertsRouter.get("/:id", (req, res) => {
   const role = roleOf(req);
   const providerId = providerIdOf(req);
-  const agentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
+  const agentId = agentIdOf(req);
 
   const row = db.prepare(`${BASE_SELECT} WHERE a.id = ?`).get(req.params.id) as AlertRow | undefined;
   if (!row) return res.status(404).json({ error: "Case not found" });
@@ -192,7 +194,7 @@ alertsRouter.post("/:id/action", (req, res) => {
   const { action, note } = req.body as { action?: CaseAction; note?: string };
   const role = roleOf(req);
   const providerId = providerIdOf(req);
-  const agentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
+  const agentId = agentIdOf(req);
   if (!action) return res.status(400).json({ error: "action is required" });
 
   const row = db.prepare(`SELECT id, agent_id, provider_id, status, type, assigned_role FROM alerts WHERE id = ?`).get(req.params.id) as

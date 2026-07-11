@@ -12,7 +12,7 @@ import { LevelPill, providerColor } from "../components/Chips";
  * FSP am I", not a filter over shared data.
  */
 export function FspView() {
-  const { t, meta, providerId, setProviderId } = useApp();
+  const { t, meta, user, providerId, setProviderId } = useApp();
   const [overview, setOverview] = useState<Overview | null>(null);
   const [agents, setAgents] = useState<AgentLiquidity[]>([]);
   const [loadError, setLoadError] = useState("");
@@ -57,7 +57,7 @@ export function FspView() {
           <div className="page-sub">{t("roleFspDesc")}</div>
         </div>
         <div className="segmented" role="group" aria-label={t("fspYouAre")}>
-          {meta?.providers.map((p) => (
+          {meta?.providers.filter((p) => !user?.providerId || p.id === user.providerId).map((p) => (
             <button key={p.id} className={providerId === p.id ? "active" : ""} onClick={() => setProviderId(p.id)}>
               <span className="dot" style={{ display: "inline-block", width: 7, height: 7, borderRadius: 99, background: providerColor(p.id), marginRight: 6 }} />
               {p.name}
