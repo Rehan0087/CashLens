@@ -1,6 +1,7 @@
 import type {
   AgentDetail,
   AgentLiquidity,
+  FeedbackOutcome,
   AlertListItem,
   CaseAction,
   CaseDetail,
@@ -8,6 +9,7 @@ import type {
   MetricsReport,
   Observability,
   Overview,
+  PlanningContext,
   Role,
   Scenario,
   WhatIf,
@@ -63,7 +65,20 @@ export const api = {
     }
     return res.json() as Promise<{ ok: true; id: string; status: string }>;
   },
+  caseFeedback: async (id: string, outcome: FeedbackOutcome, note: string) => {
+    const res = await fetch(`/api/alerts/${id}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ outcome, note }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error ?? `Feedback failed (${res.status})`);
+    }
+    return res.json() as Promise<{ ok: true; id: string; outcome: FeedbackOutcome; ruleVersion: string }>;
+  },
   overview: () => get<Overview>("/api/overview"),
+  planningContext: () => get<PlanningContext>("/api/planning/context"),
   scenarios: () => get<Scenario[]>("/api/scenarios"),
   metrics: () => get<MetricsReport>("/api/metrics"),
   observability: () => get<Observability>("/api/observability"),

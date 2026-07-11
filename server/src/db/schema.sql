@@ -84,6 +84,40 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON sessions(expires_at);
 
+-- Immutable workflow transitions. Actor identity is nullable on deletion so
+-- historical audit events remain available if a demo identity is re-seeded.
+CREATE TABLE IF NOT EXISTS alert_workflow_events (
+  id                 TEXT PRIMARY KEY,
+  alert_id           TEXT NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
+  actor_user_id      TEXT REFERENCES users(id) ON DELETE SET NULL,
+  actor_role         TEXT NOT NULL,
+  action             TEXT NOT NULL CHECK (action IN ('create', 'acknowledge', 'escalate', 'resolve', 'feedback')),
+  from_status        TEXT NOT NULL,
+  to_status          TEXT NOT NULL,
+  from_assigned_role TEXT NOT NULL,
+  to_assigned_role   TEXT NOT NULL,
+  note               TEXT NOT NULL,
+  created_at         TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_alert_workflow_events_alert
+  ON alert_workflow_events(alert_id, created_at);
+
+-- Human review labels are append-only evidence, not an automated model target.
+CREATE TABLE IF NOT EXISTS alert_feedback (
+  id                 TEXT PRIMARY KEY,
+  alert_id           TEXT NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
+  reviewer_user_id   TEXT REFERENCES users(id) ON DELETE SET NULL,
+  reviewer_role      TEXT NOT NULL CHECK (reviewer_role = 'risk_analyst'),
+  outcome            TEXT NOT NULL CHECK (outcome IN ('confirmed_concern', 'false_positive', 'contextual_spike', 'insufficient_evidence')),
+  note               TEXT NOT NULL,
+  rule_version       TEXT NOT NULL DEFAULT 'detector-v1',
+  created_at         TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_alert_feedback_alert
+  ON alert_feedback(alert_id, created_at);
+
 -- Simulation anchor values (e.g. the frozen "now" the whole demo is computed against)
 CREATE TABLE IF NOT EXISTS sim_meta (
   key   TEXT PRIMARY KEY,

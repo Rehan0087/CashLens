@@ -3,6 +3,7 @@ import type { MetricsReport, Observability, Overview } from "../api/types";
 import { api } from "../api/client";
 import { useApp } from "../state";
 import { providerColor } from "../components/Chips";
+import { PlanningPanel } from "../components/PlanningPanel";
 
 export function MgmtView() {
   const { t } = useApp();
@@ -112,6 +113,8 @@ export function MgmtView() {
             <div className="sub-note">{t("mgmtBoundary")}</div>
           </div>
         </div>
+
+        <PlanningPanel />
 
         {metrics && (
           <div className="card rise">

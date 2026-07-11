@@ -160,3 +160,74 @@ Verification:
 - [Manual behavior checked]
 ```
 
+## Advanced innovation prompt
+
+```text
+Act as a Lead Solutions Architect and Expert Full-Stack Engineer. Build out the
+Innovation Opportunities for the Super Agent Liquidity & Risk Intelligence
+Platform hackathon prototype.
+
+Use normalized relational SQL tables, privacy-preserving synthetic data, and an
+Ubuntu/Linux-friendly deployment model. Work one phase at a time and wait for
+approval before moving to the next phase.
+
+Phase 1 — Advanced analytics and intelligent architecture:
+1. Design privacy-preserving synthetic identifiers and a normalized schema for
+   area/network liquidity-pressure hotspots without exposing customer identity.
+2. Implement context-aware spike detection that distinguishes legitimate
+   holiday/planned operational demand from suspicious residual behavior. Return
+   explainable anomaly and risk evidence for the UI.
+
+Phase 2 — Operational workflows and human-in-the-loop review:
+3. Implement provider-aware operational context and planning that compares each
+   provider's separate e-money depletion forecast with the shared physical-cash
+   forecast. Enforce provider masking server-side.
+4. Implement alert ownership, escalation, resolution, and reviewer feedback.
+   Record false positives and contextual explanations without automatic account
+   blocking, fund freezing, transfers, or final fraud determinations.
+
+Phase 3 — Inclusive communication and traceability:
+5. Provide accessible English, Bengali, and Banglish alert payloads and UI
+   components with clear evidence and safe next steps.
+6. Implement a Linux-compatible JSONL logger that traces alert creation,
+   escalation, resolution, feedback, database integrity, and health metrics.
+
+Global constraints:
+- All data remains synthetic and reproducible.
+- Never request or simulate PINs, OTPs, private keys, real credentials, or raw
+  customer identifiers.
+- Physical cash and provider e-money remain separate ledgers.
+- Provider boundaries are enforced by the server and relational constraints.
+- Every risk result is advisory and requires human review where appropriate.
+- Update documentation, tests, and validation evidence with each phase.
+```
+
+## Innovation implementation record
+
+The prompt above was implemented in approval-gated phases:
+
+- Phase 1, Step 1: `docs/innovation-phase-1-step-1.md` — privacy-safe schema,
+  scoped pseudonyms, cohort suppression, and hotspot scoring design.
+- Phase 1, Step 2: `docs/innovation-phase-1-step-2.md` — context-aware Python
+  detector, explainable evidence, and regression tests.
+- Phase 2: `docs/innovation-phase-2.md` — provider-aware planning API,
+  role-masked dashboard, workflow audit events, and reviewer feedback.
+- Phase 3: `docs/innovation-phase-3.md` — localized inclusive alert card,
+  creation/escalation/resolution traceability, and Linux JSONL monitoring.
+
+Commit requirement for this implementation:
+
+```text
+Prompt: Implement the approved CashLens innovation phases.
+
+Goal:
+Ship privacy-safe analytics, provider-aware planning, human review workflows,
+inclusive alert communication, and auditable lifecycle monitoring.
+
+Verification:
+- npm.cmd run build (server)
+- npm.cmd run build (client)
+- npm.cmd run seed (server)
+- Python detector tests and lifecycle logger compilation
+- Provider masking and alert lifecycle smoke tests
+```

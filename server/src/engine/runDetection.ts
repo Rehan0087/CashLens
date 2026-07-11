@@ -1,4 +1,5 @@
 import { db, getSimNow, inTransaction } from "../db/index.js";
+import { randomUUID } from "node:crypto";
 import { computeAllAlertDrafts } from "./detectors.js";
 
 /**
@@ -17,8 +18,9 @@ export function runDetection(): number {
        VALUES (?, ?, ?, ?, ?, ?, ?, 'new', 'provider_ops', ?, ?)`
     );
     drafts.forEach((d, i) => {
+      const alertId = `al-${i + 1}`;
       insert.run(
-        `al-${i + 1}`,
+        alertId,
         d.agentId,
         d.providerId,
         d.type,
@@ -28,6 +30,11 @@ export function runDetection(): number {
         simNow,
         d.sourceTransactionId
       );
+      db.prepare(
+        `INSERT INTO alert_workflow_events
+         (id, alert_id, actor_user_id, actor_role, action, from_status, to_status, from_assigned_role, to_assigned_role, note, created_at)
+         VALUES (?, ?, NULL, 'system', 'create', 'new', 'new', 'system', 'provider_ops', ?, ?)`
+      ).run(randomUUID(), alertId, "Advisory detection created this alert; human review is required.", simNow);
     });
   });
 

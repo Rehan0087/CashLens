@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CaseAction, CaseDetail, Language, Role } from "../api/types";
+import type { CaseAction, CaseDetail, FeedbackOutcome, Language, Role } from "../api/types";
 import { api } from "../api/client";
 import { useApp } from "../state";
 import { EvidenceBand } from "./EvidenceBand";
@@ -40,6 +40,8 @@ export function CasePanel({
   const [detail, setDetail] = useState<CaseDetail | null>(null);
   const [note, setNote] = useState("");
   const [disposition, setDisposition] = useState("dispNoIssue");
+  const [feedbackOutcome, setFeedbackOutcome] = useState<FeedbackOutcome>("false_positive");
+  const [feedbackNote, setFeedbackNote] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -50,6 +52,7 @@ export function CasePanel({
   useEffect(() => {
     setDetail(null);
     setNote("");
+    setFeedbackNote("");
     setError("");
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,6 +66,22 @@ export function CasePanel({
       const finalNote = action === "resolve" && role === "risk_analyst" ? `${t(disposition)} — ${note}`.trim() : note;
       await api.caseAction(detail.id, action, role, finalNote, role === "provider_ops" ? providerId : undefined);
       setNote("");
+      load();
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const recordFeedback = async () => {
+    if (!detail) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.caseFeedback(detail.id, feedbackOutcome, feedbackNote);
+      setFeedbackNote("");
       load();
       onChanged();
     } catch (e) {
@@ -153,6 +172,36 @@ export function CasePanel({
           </div>
         ))}
       </div>
+
+      {detail.feedback.length > 0 && (
+        <div>
+          <div className="eyebrow">{t("feedbackOutcome")}</div>
+          {detail.feedback.map((item) => (
+            <div className="note-item" key={item.id}>
+              <span className="who">{item.outcome.replaceAll("_", " ")}<br />{formatTimestamp(item.created_at)}</span>
+              <span>{item.note}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {role === "risk_analyst" && (detail.status === "escalated" || detail.status === "resolved") && (
+        <div className="action-bar">
+          <label style={{ fontSize: 12.5, display: "flex", flexDirection: "column", gap: 5 }}>
+            <span className="muted">{t("feedbackOutcome")}</span>
+            <select value={feedbackOutcome} onChange={(e) => setFeedbackOutcome(e.target.value as FeedbackOutcome)}>
+              <option value="confirmed_concern">{t("feedbackConfirmed")}</option>
+              <option value="false_positive">{t("feedbackFalsePositive")}</option>
+              <option value="contextual_spike">{t("feedbackContextual")}</option>
+              <option value="insufficient_evidence">{t("feedbackInsufficient")}</option>
+            </select>
+          </label>
+          <textarea placeholder={t("feedbackNotePlaceholder")} value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} />
+          <button className="btn" disabled={busy || feedbackNote.trim().length < 5} onClick={recordFeedback}>
+            {t("recordFeedback")}
+          </button>
+        </div>
+      )}
 
       {detail.allowedActions.length > 0 && (
         <div className="action-bar">

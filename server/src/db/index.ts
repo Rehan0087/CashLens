@@ -14,6 +14,46 @@ db.exec("PRAGMA foreign_keys = ON;");
 export function migrate() {
   const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf-8");
   db.exec(schema);
+  upgradeWorkflowEventSchema();
+}
+
+/**
+ * SQLite does not alter an existing CHECK constraint when CREATE TABLE IF NOT
+ * EXISTS is re-run. Rebuild the small audit table once when upgrading a demo
+ * database created before alert-creation events were added.
+ */
+function upgradeWorkflowEventSchema() {
+  const row = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'alert_workflow_events'")
+    .get() as { sql?: string } | undefined;
+  if (!row?.sql || row.sql.includes("'create'")) return;
+
+  db.exec(`
+    DROP INDEX IF EXISTS idx_alert_workflow_events_alert;
+    ALTER TABLE alert_workflow_events RENAME TO alert_workflow_events_legacy;
+    CREATE TABLE alert_workflow_events (
+      id                 TEXT PRIMARY KEY,
+      alert_id           TEXT NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
+      actor_user_id      TEXT REFERENCES users(id) ON DELETE SET NULL,
+      actor_role         TEXT NOT NULL,
+      action             TEXT NOT NULL CHECK (action IN ('create', 'acknowledge', 'escalate', 'resolve', 'feedback')),
+      from_status        TEXT NOT NULL,
+      to_status          TEXT NOT NULL,
+      from_assigned_role TEXT NOT NULL,
+      to_assigned_role   TEXT NOT NULL,
+      note               TEXT NOT NULL,
+      created_at         TEXT NOT NULL
+    );
+    INSERT INTO alert_workflow_events
+      (id, alert_id, actor_user_id, actor_role, action, from_status, to_status,
+       from_assigned_role, to_assigned_role, note, created_at)
+    SELECT id, alert_id, actor_user_id, actor_role, action, from_status, to_status,
+       from_assigned_role, to_assigned_role, note, created_at
+    FROM alert_workflow_events_legacy;
+    DROP TABLE alert_workflow_events_legacy;
+    CREATE INDEX idx_alert_workflow_events_alert
+      ON alert_workflow_events(alert_id, created_at);
+  `);
 }
 
 export function inTransaction(fn: () => void) {

@@ -15,6 +15,7 @@ import { liveTransactionStream } from "./simulation/liveTransactionStream.js";
 import { startOpenAiAdvisor } from "./ai/openaiAdvisor.js";
 import { ensureDemoUsers } from "./auth.js";
 import { authRouter } from "./routes/auth.js";
+import { planningRouter } from "./routes/planning.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 try {
@@ -51,6 +52,7 @@ app.use("/api", observeApiRequest);
 
 app.use("/api/auth", authRouter);
 app.use("/api", miscRouter);
+app.use("/api/planning", planningRouter);
 app.use("/api/agents", agentsRouter);
 app.use("/api/alerts", alertsRouter);
 app.use("/api/live-feed", liveFeedRouter);

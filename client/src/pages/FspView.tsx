@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useApp } from "../state";
 import { DrawerBar } from "../components/DrawerBar";
 import { LevelPill, providerColor } from "../components/Chips";
+import { PlanningPanel } from "../components/PlanningPanel";
 
 /**
  * Financial service provider view (brief §5): understand provider-specific service
@@ -99,6 +100,8 @@ export function FspView() {
             <div className="k">{t("staleFeeds")}</div>
           </div>
         </div>
+
+        <PlanningPanel />
 
         <div className="card rise">
           <div className="eyebrow">{t("fspFloatPressure")}</div>

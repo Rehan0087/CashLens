@@ -7,6 +7,7 @@ export type PressureLevel = "low" | "medium" | "high";
 export type ProviderDataState = "fresh" | "stale" | "missing" | "inconsistent";
 export type ForecastConfidencePenalty = "degraded_feed" | "sparse_history" | "thin_horizon" | "volatile_amounts";
 export type CaseAction = "acknowledge" | "escalate" | "resolve";
+export type FeedbackOutcome = "confirmed_concern" | "false_positive" | "contextual_spike" | "insufficient_evidence";
 
 export interface AuthUser {
   id: string;
@@ -114,8 +115,66 @@ export interface CaseNote {
 
 export interface CaseDetail extends AlertListItem {
   notes: CaseNote[];
+  feedback: AlertFeedback[];
+  workflowEvents: WorkflowEvent[];
   agentContext: AgentLiquidity | null;
   allowedActions: CaseAction[];
+}
+
+export interface AlertFeedback {
+  id: string;
+  reviewer_role: string;
+  outcome: FeedbackOutcome;
+  note: string;
+  rule_version: string;
+  created_at: string;
+}
+
+export interface WorkflowEvent {
+  id: string;
+  actor_role: string;
+  action: string;
+  from_status: AlertStatus;
+  to_status: AlertStatus;
+  from_assigned_role: string;
+  to_assigned_role: string;
+  note: string;
+  created_at: string;
+}
+
+export interface PlanningProvider {
+  providerId: string;
+  providerName: string;
+  agentCount: number;
+  pressuredAgents: number;
+  totalBalance: number | null;
+  projectedInflowNeed: number;
+  shortageMinutes: number | null;
+  level: PressureLevel;
+  dataState: ProviderDataState | "degraded";
+  exactValuesMasked: boolean;
+}
+
+export interface PlanningContext {
+  simNow: string;
+  horizonHours: number;
+  sharedCash: {
+    agentCount: number;
+    totalPhysicalCash: number | null;
+    projectedOutflow: number;
+    shortageMinutes: number | null;
+    level: PressureLevel;
+    exactValuesMasked: boolean;
+  };
+  providers: PlanningProvider[];
+  constraints: Array<{
+    providerId: string;
+    providerShortageMinutes: number | null;
+    sharedCashShortageMinutes: number | null;
+    bindingConstraint: "provider_e_money" | "shared_physical_cash" | "no_projected_shortage" | "insufficient_data";
+  }>;
+  advisoryOnly: true;
+  prohibitedActions: string[];
 }
 
 export interface AreaSummary {

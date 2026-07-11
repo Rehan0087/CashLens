@@ -5,6 +5,7 @@ import { useApp } from "../state";
 import { CasePanel } from "../components/CasePanel";
 import { DrawerBar } from "../components/DrawerBar";
 import { LevelPill, ProviderChip, SeverityChip, StatusChip, alertScopeFallback, providerColor, typeLabel } from "../components/Chips";
+import { PlanningPanel } from "../components/PlanningPanel";
 
 const STATUSES = ["all", "new", "acknowledged", "escalated", "resolved"] as const;
 
@@ -115,6 +116,8 @@ export function OpsView() {
             <div className="k">{t("staleFeeds")}</div>
           </div>
         </div>
+
+        <PlanningPanel />
 
         <div className="card rise">
           <div className="page-head" style={{ marginBottom: 10 }}>

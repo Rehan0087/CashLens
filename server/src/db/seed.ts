@@ -23,7 +23,7 @@ function seed() {
 
   inTransaction(() => {
     db.exec(
-      "DELETE FROM sessions; DELETE FROM users; DELETE FROM case_notes; DELETE FROM alerts; DELETE FROM transactions; DELETE FROM agent_provider_balances; DELETE FROM agents; DELETE FROM providers;"
+      "DELETE FROM sessions; DELETE FROM alert_feedback; DELETE FROM alert_workflow_events; DELETE FROM users; DELETE FROM case_notes; DELETE FROM alerts; DELETE FROM transactions; DELETE FROM agent_provider_balances; DELETE FROM agents; DELETE FROM providers;"
     );
 
     const insertProvider = db.prepare("INSERT INTO providers (id, name) VALUES (?, ?)");

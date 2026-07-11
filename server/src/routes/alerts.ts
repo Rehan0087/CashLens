@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
-import { db } from "../db/index.js";
+import { db, inTransaction } from "../db/index.js";
 import { computeAgentLiquidity, maskLiquidityForRole } from "../engine/liquidityScorer.js";
 import { allowedActions, nextAssignedRole, nextStatus, noteRequired, type CaseAction } from "../engine/workflow.js";
 import type { AlertEvidence, AlertStatus, AlertType, LocalizedText, Role } from "../types.js";
@@ -23,6 +23,29 @@ interface AlertRow {
   confidence: number;
   status: AlertStatus;
   assigned_role: string;
+  created_at: string;
+}
+
+type FeedbackOutcome = "confirmed_concern" | "false_positive" | "contextual_spike" | "insufficient_evidence";
+
+interface FeedbackRow {
+  id: string;
+  reviewer_role: string;
+  outcome: FeedbackOutcome;
+  note: string;
+  rule_version: string;
+  created_at: string;
+}
+
+interface WorkflowEventRow {
+  id: string;
+  actor_role: string;
+  action: string;
+  from_status: AlertStatus;
+  to_status: AlertStatus;
+  from_assigned_role: string;
+  to_assigned_role: string;
+  note: string;
   created_at: string;
 }
 
@@ -178,15 +201,77 @@ alertsRouter.get("/:id", (req, res) => {
     .prepare(`SELECT id, role, note, timestamp FROM case_notes WHERE alert_id = ? ORDER BY timestamp, id`)
     .all(req.params.id) as unknown as Array<{ id: string; role: string; note: string; timestamp: string }>;
 
+  const feedback = db
+    .prepare(`SELECT id, reviewer_role, outcome, note, rule_version, created_at FROM alert_feedback WHERE alert_id = ? ORDER BY created_at, id`)
+    .all(req.params.id) as unknown as FeedbackRow[];
+
+  const workflowEvents = db
+    .prepare(
+      `SELECT id, actor_role, action, from_status, to_status, from_assigned_role, to_assigned_role, note, created_at
+       FROM alert_workflow_events WHERE alert_id = ? ORDER BY created_at, id`
+    )
+    .all(req.params.id) as unknown as WorkflowEventRow[];
+
   const [liq] = computeAgentLiquidity(row.agent_id);
 
   res.json({
     ...serialize(row, role),
     notes,
+    feedback,
+    workflowEvents,
     agentContext: liq ? maskLiquidityForRole(liq, role, providerId) : null,
     allowedActions: allowedActions(row.status, role, row.type),
     noteRequiredFor: { escalate: noteRequired("escalate"), resolve: noteRequired("resolve"), acknowledge: noteRequired("acknowledge") },
   });
+});
+
+// Human feedback is deliberately separate from resolution. A risk analyst can
+// record a false positive or contextual explanation without changing the
+// operational status until the case disposition is reviewed.
+alertsRouter.post("/:id/feedback", (req, res) => {
+  const role = roleOf(req);
+  if (role !== "risk_analyst") {
+    return res.status(403).json({ error: "Only a risk analyst can record review feedback." });
+  }
+
+  const { outcome, note } = req.body as { outcome?: FeedbackOutcome; note?: string };
+  const validOutcomes: FeedbackOutcome[] = ["confirmed_concern", "false_positive", "contextual_spike", "insufficient_evidence"];
+  if (!outcome || !validOutcomes.includes(outcome)) {
+    return res.status(400).json({ error: "outcome must be a supported human-review label." });
+  }
+  const trimmedNote = (note ?? "").trim();
+  if (trimmedNote.length < 5) return res.status(400).json({ error: "A feedback note of at least 5 characters is required." });
+
+  const row = db
+    .prepare(`SELECT id, status, assigned_role FROM alerts WHERE id = ?`)
+    .get(req.params.id) as { id: string; status: AlertStatus; assigned_role: string } | undefined;
+  if (!row) return res.status(404).json({ error: "Case not found" });
+  if (row.status !== "escalated" && row.status !== "resolved") {
+    return res.status(409).json({ error: "Feedback is available after the case reaches the risk-review queue." });
+  }
+
+  const now = new Date().toISOString();
+  const feedbackId = randomUUID();
+  inTransaction(() => {
+    db.prepare(
+      `INSERT INTO alert_feedback (id, alert_id, reviewer_user_id, reviewer_role, outcome, note, rule_version, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(feedbackId, row.id, req.user?.id ?? null, role, outcome, trimmedNote, "context-aware-spike-v1", now);
+    db.prepare(
+      `INSERT INTO alert_workflow_events
+       (id, alert_id, actor_user_id, actor_role, action, from_status, to_status, from_assigned_role, to_assigned_role, note, created_at)
+       VALUES (?, ?, ?, ?, 'feedback', ?, ?, ?, ?, ?, ?)`
+    ).run(randomUUID(), row.id, req.user?.id ?? null, role, row.status, row.status, row.assigned_role, row.assigned_role, `Feedback: ${outcome}. ${trimmedNote}`, now);
+    db.prepare(`INSERT INTO case_notes (id, alert_id, role, note, timestamp) VALUES (?, ?, ?, ?, ?)`).run(
+      randomUUID(),
+      row.id,
+      role,
+      `Human review feedback: ${outcome}. ${trimmedNote}`,
+      now
+    );
+  });
+
+  res.status(201).json({ ok: true, id: feedbackId, outcome, ruleVersion: "context-aware-spike-v1" });
 });
 
 // Case action: acknowledge / escalate / resolve, with server-enforced authority rules.
@@ -225,14 +310,21 @@ alertsRouter.post("/:id/action", (req, res) => {
     trimmedNote.length > 0 ? trimmedNote : `Action recorded: ${action}.`,
   ].join(" ");
 
-  db.prepare(`UPDATE alerts SET status = ?, assigned_role = ? WHERE id = ?`).run(newStatus, newRole, row.id);
-  db.prepare(`INSERT INTO case_notes (id, alert_id, role, note, timestamp) VALUES (?, ?, ?, ?, ?)`).run(
-    randomUUID(),
-    row.id,
-    role,
-    auditNote,
-    now
-  );
+  inTransaction(() => {
+    db.prepare(`UPDATE alerts SET status = ?, assigned_role = ? WHERE id = ?`).run(newStatus, newRole, row.id);
+    db.prepare(
+      `INSERT INTO alert_workflow_events
+       (id, alert_id, actor_user_id, actor_role, action, from_status, to_status, from_assigned_role, to_assigned_role, note, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(randomUUID(), row.id, req.user?.id ?? null, role, action, row.status, newStatus, row.assigned_role, newRole, auditNote, now);
+    db.prepare(`INSERT INTO case_notes (id, alert_id, role, note, timestamp) VALUES (?, ?, ?, ?, ?)`).run(
+      randomUUID(),
+      row.id,
+      role,
+      auditNote,
+      now
+    );
+  });
 
   res.json({ ok: true, id: row.id, previousStatus: row.status, status: newStatus, previousAssignedRole: row.assigned_role, assignedRole: newRole });
 });

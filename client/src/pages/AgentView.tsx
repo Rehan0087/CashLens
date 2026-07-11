@@ -6,7 +6,8 @@ import { DrawerBar } from "../components/DrawerBar";
 import { PressureDial } from "../components/PressureDial";
 import { HourlyBars } from "../components/HourlyBars";
 import { WhatIfPanel } from "../components/WhatIfPanel";
-import { LevelPill, ProviderChip, SeverityChip, StatusChip, alertScopeFallback, providerColor, typeLabel } from "../components/Chips";
+import { LevelPill, providerColor } from "../components/Chips";
+import { InclusiveAlertCard } from "../components/InclusiveAlertCard";
 
 function pickText(lt: { en: string; bn: string; banglish: string }, lang: Language) {
   return lt[lang] ?? lt.en;
@@ -151,19 +152,9 @@ export function AgentView() {
         <div className="card rise">
           <div className="eyebrow">{t("myAlerts")}</div>
           {detail.alerts.length === 0 && <div className="muted">{t("noAlerts")}</div>}
-          {detail.alerts.map((a) => (
-            <div className="alert-row" key={a.id}>
-              <SeverityChip severity={a.severity} t={t} />
-              <div className="body">
-                <strong style={{ fontSize: 13 }}>{typeLabel(a.type, t)}</strong>
-                <div className="exp">{pickText(a.evidence.explanation, language)}</div>
-                <div className="meta-line">
-                  <ProviderChip providerId={a.providerId} providerName={a.providerName} fallback={alertScopeFallback(a.type, t)} t={t} />
-                  <StatusChip status={a.status} t={t} />
-                </div>
-              </div>
-            </div>
-          ))}
+          <div className="inclusive-alert-list">
+            {detail.alerts.map((a) => <InclusiveAlertCard alert={a} key={a.id} />)}
+          </div>
         </div>
       </div>
     </div>

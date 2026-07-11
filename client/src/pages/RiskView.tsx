@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useApp } from "../state";
 import { CasePanel } from "../components/CasePanel";
 import { SeverityChip, StatusChip, typeLabel } from "../components/Chips";
+import { PlanningPanel } from "../components/PlanningPanel";
 
 function pickText(lt: { en: string; bn: string; banglish: string }, lang: Language) {
   return lt[lang] ?? lt.en;
@@ -36,6 +37,7 @@ export function RiskView() {
       </div>
 
       <div className="grid risk-layout">
+        <PlanningPanel />
         <div style={{ display: "grid", gap: 12 }}>
           <div className="card rise">
             <div className="eyebrow">
