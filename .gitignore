@@ -1,0 +1,10 @@
+node_modules/
+dist/
+server/data/
+*.log
+*.tsbuildinfo
+.env
+server/.env
+.DS_Store
+.claude/
+.agents/
