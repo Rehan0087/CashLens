@@ -35,7 +35,7 @@ so every run reproduces the same story.
 
 ### Live transaction feed
 
-Open **Live transaction feed** from the role picker or left rail for the real-time
+Open **Live transaction feed** from the landing page or the app header for the real-time
 synthetic stream. It uses Server-Sent Events at `/api/live-feed/stream` and keeps a
 five-minute rolling risk window. The demo controls can pause/resume the
 stream, inject a ten-second bKash liquidity drain, or inject five identical 20,000 BDT
@@ -55,8 +55,8 @@ npm run metrics     # (in /server) recomputes validation metrics
 
 ## Guided scenarios (A–D)
 
-The fastest way to see the whole product: open **Guided scenarios** (from the role
-picker or the left rail). It presents the four demonstration scenarios from the
+The fastest way to see the whole product: choose **Multi-provider agent** on the
+landing page, then open **Guided scenarios** from the app header. It presents the four demonstration scenarios from the
 challenge brief and, for each, jumps straight to the exact agent or case that shows
 it — with a banner stating the scenario and what to notice.
 
