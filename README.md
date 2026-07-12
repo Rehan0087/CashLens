@@ -80,7 +80,9 @@ ignored by Git and must never be committed.
 | Variable | Default | Purpose |
 |---|---|---|
 | `PORT` | `4000` | Express API and production web-server port |
-| `HOST` | `127.0.0.1` | Bind address; use `0.0.0.0` only for an intentional LAN demo |
+| `HOST` | `127.0.0.1` | Bind address; in production it binds `0.0.0.0` by default |
+| `DATA_DIR` | `server/data` | Optional: where SQLite and generated artifacts are stored |
+| `DB_FILE` | `DATA_DIR/cashlens.sqlite3` | Optional: full path to the SQLite database file |
 | `OPENAI_API_KEY` | empty | Optional key for the synthetic advisory only |
 | `OPENAI_MODEL` | `gpt-5.6` | Optional advisory model override |
 
@@ -347,6 +349,34 @@ reviewability. Production deployment would require managed relational
 infrastructure, migrations, backups, an approved identity provider with MFA,
 rate limiting, key management, retention controls, independent security review,
 incident response, and an appeal process.
+
+## Deploy to Render (single service)
+
+This repo is set up so the Express server can serve the built React client when
+`client/dist` exists. On Render, deploy one **Web Service** and build both apps.
+
+1. Create a new Render **Web Service** from your GitHub repo.
+2. Set **Build Command**:
+
+   `cd client && npm ci --production=false && npm run build && cd ../server && npm ci --production=false && npm run seed && npm run build`
+
+3. Set **Start Command**:
+
+   `cd server && npm start`
+
+4. Set env vars (Render Dashboard → Environment):
+
+   - `NODE_VERSION=24` (or rely on `server/package.json` engines)
+   - `OPENAI_API_KEY` (optional)
+   - `OPENAI_MODEL` (optional)
+
+Optional persistence:
+
+- Render instances have an ephemeral filesystem by default. If you want case
+  actions (acknowledge/escalate/resolve) to survive restarts, attach a Render
+  **Persistent Disk** (paid plans) and set `DATA_DIR` to the disk mount path.
+  Note: the disk isn’t available during the build step, so you’ll need to seed
+  the database after the first deploy (for example via an `initialDeployHook`).
 
 ## SonarQube analysis
 

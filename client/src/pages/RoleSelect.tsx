@@ -19,7 +19,7 @@ const DEMO_USERS: Array<{ username: string; role: Role; label: string }> = [
 ];
 
 export function RoleSelect() {
-  const { language, setLanguage, login, t } = useApp();
+  const { language, setLanguage, login, setLiveOpen, t } = useApp();
   const [username, setUsername] = useState("agent.demo");
   const [password, setPassword] = useState("cashlens-demo");
   const [error, setError] = useState("");
@@ -86,6 +86,15 @@ export function RoleSelect() {
           ))}
         </div>
       </div>
+
+      <button className="scenarios-cta live-cta rise" onClick={() => setLiveOpen(true)}>
+        <span className="icon">◉</span>
+        <span>
+          <strong>{t("liveFeedNav")}</strong>
+          <span className="desc">{t("liveFeedSubtitle")}</span>
+        </span>
+        <span className="arrow">→</span>
+      </button>
 
       <div className="role-foot">{t("syntheticFooter")}</div>
     </div>

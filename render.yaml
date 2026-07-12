@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: cashlens
+    runtime: node
+    plan: free
+    healthCheckPath: /api/health
+    buildCommand: cd client && npm ci --production=false && npm run build && cd ../server && npm ci --production=false && npm run seed && npm run build
+    startCommand: cd server && npm start
+    # Optional persistence (paid plans):
+    # - Add a persistent disk and store the SQLite DB there.
+    # - Because the disk isn't available during build, seed via initialDeployHook.
+    #
+    # disk:
+    #   name: cashlens-data
+    #   mountPath: /var/data
+    # initialDeployHook: cd server && npm run seed
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: OPENAI_MODEL
+        value: gpt-5.6
+      - key: OPENAI_API_KEY
+        sync: false
+      # - key: DATA_DIR
+      #   value: /var/data

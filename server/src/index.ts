@@ -26,7 +26,9 @@ try {
 }
 
 const PORT = Number(process.env.PORT ?? 4000);
-const HOST = process.env.HOST ?? "127.0.0.1";
+const HOST =
+  process.env.HOST ??
+  (process.env.NODE_ENV === "production" || process.env.RENDER ? "0.0.0.0" : "127.0.0.1");
 const clientDist = path.resolve(__dirname, "../../client/dist");
 
 migrate();
@@ -51,11 +53,13 @@ app.use(express.json());
 app.use("/api", observeApiRequest);
 
 app.use("/api/auth", authRouter);
+// The landing-page feed contains synthetic aggregate activity only, so it must
+// be mounted before the authenticated /api router can intercept it.
+app.use("/api/live-feed", liveFeedRouter);
 app.use("/api", miscRouter);
 app.use("/api/planning", planningRouter);
 app.use("/api/agents", agentsRouter);
 app.use("/api/alerts", alertsRouter);
-app.use("/api/live-feed", liveFeedRouter);
 
 // Production/LAN mode: one server delivers both the API and the built React app.
 if (fs.existsSync(clientDist)) {
